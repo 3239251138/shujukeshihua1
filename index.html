@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .chart-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .data-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .data-controls button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .data-controls button:hover {
+            background: #5a6fd8;
+            transform: scale(1.05);
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .upload-section h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 第3章图表样式 */
+        .chapter3-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .chapter3-chart {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .chapter3-chart h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .chapter3-controls {
+            margin-top: 15px;
+        }
+
+        .chapter3-controls label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .chapter3-controls input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .chapter3-controls .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        .chapter3-button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .chapter3-button-group button {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chapter3-button-group button:hover {
+            background: #5a6fd8;
+        }
+
+        .chapter3-button-group button.reset {
+            background: #ff6b6b;
+        }
+
+        .chapter3-button-group button.reset:hover {
+            background: #ff5252;
+        }
+
+        .chapter3-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .chapter3-table th, .chapter3-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .chapter3-table th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+        }
+
+        .chapter3-table input {
+            width: 100%;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 数据可视化平台</h1>
+            <p>探索五种经典数据可视化图形及第3章交互式图表</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showAllCharts()">全部图表</button>
+            <button class="nav-tab" onclick="showChart('line')">折线图</button>
+            <button class="nav-tab" onclick="showChart('bar')">柱形图</button>
+            <button class="nav-tab" onclick="showChart('pie')">饼图</button>
+            <button class="nav-tab" onclick="showChart('scatter')">散点图</button>
+            <button class="nav-tab" onclick="showChart('histogram')">直方图</button>
+            <button class="nav-tab" onclick="showChart('chapter3')">第3章图表</button>
+        </div>
+
+        <div class="chart-grid">
+            <!-- 折线图 -->
+            <div class="chart-card" data-type="line">
+                <h3>📈 折线图 - 气温变化趋势</h3>
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div class="data-controls">
+                    <button onclick="updateLineChart('temperature')">气温数据</button>
+                    <button onclick="updateLineChart('sales')">销售数据</button>
+                    <button onclick="updateLineChart('random')">随机数据</button>
+                </div>
+            </div>
+
+            <!-- 柱形图 -->
+            <div class="chart-card" data-type="bar">
+                <h3>📊 柱形图 - 商品销售对比</h3>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+                <div class="data-controls">
+                    <button onclick="updateBarChart('sales')">销售数据</button>
+                    <button onclick="updateBarChart('revenue')">收入数据</button>
+                    <button onclick="updateBarChart('users')">用户数据</button>
+                </div>
+            </div>
+
+            <!-- 饼图 -->
+            <div class="chart-card" data-type="pie">
+                <h3>🥧 饼图 - 预算分配比例</h3>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="data-controls">
+                    <button onclick="updatePieChart('budget')">预算分配</button>
+                    <button onclick="updatePieChart('market')">市场份额</button>
+                    <button onclick="updatePieChart('time')">时间分配</button>
+                </div>
+            </div>
+
+            <!-- 散点图 -->
+            <div class="chart-card" data-type="scatter">
+                <h3>🔵 散点图 - 变量相关性分析</h3>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+                <div class="data-controls">
+                    <button onclick="updateScatterChart('correlation')">正相关</button>
+                    <button onclick="updateScatterChart('negative')">负相关</button>
+                    <button onclick="updateScatterChart('random')">随机分布</button>
+                </div>
+            </div>
+
+            <!-- 直方图 -->
+            <div class="chart-card" data-type="histogram">
+                <h3>📋 直方图 - 数据分布情况</h3>
+                <div class="chart-container">
+                    <canvas id="histogramChart"></canvas>
+                </div>
+                <div class="data-controls">
+                    <button onclick="updateHistogramChart('normal')">正态分布</button>
+                    <button onclick="updateHistogramChart('uniform')">均匀分布</button>
+                    <button onclick="updateHistogramChart('skewed')">偏态分布</button>
+                </div>
+            </div>
+
+            <!-- 第3章图表 -->
+            <div class="chart-card" data-type="chapter3" style="grid-column: 1 / -1;">
+                <h3>📚 第3章 - 交互式图表</h3>
+                <div class="chapter3-container">
+                    <!-- 正弦余弦函数 -->
+                    <div class="chapter3-chart">
+                        <h4>正弦余弦函数</h4>
+                        <div class="chart-container">
+                            <canvas id="sineCosineChart"></canvas>
+                        </div>
+                        <div class="chapter3-controls">
+                            <label for="frequency">频率</label>
+                            <input type="range" id="frequency" min="0.5" max="3" step="0.1" value="1">
+                            <div class="value-display">
+                                <span>0.5</span>
+                                <span id="frequency-value">1</span>
+                                <span>3</span>
+                            </div>
+                            
+                            <label for="amplitude">振幅</label>
+                            <input type="range" id="amplitude" min="0.5" max="2" step="0.1" value="1">
+                            <div class="value-display">
+                                <span>0.5</span>
+                                <span id="amplitude-value">1</span>
+                                <span>2</span>
+                            </div>
+                            
+                            <div class="chapter3-button-group">
+                                <button id="animate-sine">播放动画</button>
+                                <button class="reset" id="reset-sine">重置参数</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 带刻度的函数图 -->
+                    <div class="chapter3-chart">
+                        <h4>带刻度的函数图</h4>
+                        <div class="chart-container">
+                            <canvas id="labeledChart"></canvas>
+                        </div>
+                        <div class="chapter3-controls">
+                            <label for="x-min">X轴最小值</label>
+                            <input type="range" id="x-min" min="-5" max="-2" step="0.5" value="-3">
+                            <div class="value-display">
+                                <span>-5</span>
+                                <span id="x-min-value">-3</span>
+                                <span>-2</span>
+                            </div>
+                            
+                            <label for="x-max">X轴最大值</label>
+                            <input type="range" id="x-max" min="2" max="5" step="0.5" value="3">
+                            <div class="value-display">
+                                <span>2</span>
+                                <span id="x-max-value">3</span>
+                                <span>5</span>
+                            </div>
+                            
+                            <div class="chapter3-button-group">
+                                <button id="animate-labels">播放动画</button>
+                                <button class="reset" id="reset-labels">重置参数</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 电影票房排行榜 -->
+                    <div class="chapter3-chart" style="grid-column: 1 / -1;">
+                        <h4>电影票房排行榜</h4>
+                        <div class="chart-container">
+                            <canvas id="movieChart"></canvas>
+                        </div>
+                        <div class="chapter3-controls">
+                            <p>直接在下方表格中编辑票房数据，图表将自动更新</p>
+                        </div>
+                        
+                        <table class="chapter3-table">
+                            <thead>
+                                <tr>
+                                    <th>电影名称</th>
+                                    <th>票房(亿元)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="movie-data">
+                                <!-- 数据将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                        
+                        <div class="chapter3-button-group">
+                            <button id="animate-movies">播放动画</button>
+                            <button class="reset" id="reset-movies">重置数据</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h3>📁 上传您的数据文件</h3>
+            <p>支持 CSV、JSON、Excel 格式文件，系统将自动生成可视化图表</p>
+            <input type="file" id="fileInput" accept=".csv,.json,.xlsx,.xls" style="display: none;">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                选择文件上传
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化所有图表
+        let charts = {};
+
+        // 动画初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            animateCards();
+            initializeCharts();
+            initializeChapter3Charts();
+        });
+
+        function animateCards() {
+            const cards = document.querySelectorAll('.chart-card');
+            cards.forEach((card, index) => {
+                anime({
+                    targets: card,
+                    opacity: [0, 1],
+                    translateY: [30, 0],
+                    duration: 800,
+                    delay: index * 100,
+                    easing: 'easeOutCubic'
+                });
+            });
+        }
+
+        function initializeCharts() {
+            // 折线图
+            charts.line = new Chart(document.getElementById('lineChart'), {
+                type: 'line',
+                data: getLineData('temperature'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: '未来15天气温变化'
+                        }
+                    }
+                }
+            });
+
+            // 柱形图
+            charts.bar = new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data: getBarData('sales'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            // 饼图
+            charts.pie = new Chart(document.getElementById('pieChart'), {
+                type: 'pie',
+                data: getPieData('budget'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+            // 散点图
+            charts.scatter = new Chart(document.getElementById('scatterChart'), {
+                type: 'scatter',
+                data: getScatterData('correlation'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            // 直方图
+            charts.histogram = new Chart(document.getElementById('histogramChart'), {
+                type: 'bar',
+                data: getHistogramData('normal'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '数值区间'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '频数'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 第3章图表初始化
+        function initializeChapter3Charts() {
+            // 正弦余弦图表
+            charts.sineCosine = new Chart(document.getElementById('sineCosineChart'), {
+                type: 'line',
+                data: generateSineCosineData(1, 1),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'x轴'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'y轴'
+                            },
+                            min: -1.5,
+                            max: 1.5
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // 带刻度的图表
+            charts.labeled = new Chart(document.getElementById('labeledChart'), {
+                type: 'line',
+                data: generateSineCosineData(1, 1),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'x轴'
+                            },
+                            min: -3,
+                            max: 3,
+                            ticks: {
+                                callback: function(value) {
+                                    const piValues = {
+                                        '-3': '-π',
+                                        '-1.5': '-π/2',
+                                        '0': '0',
+                                        '1.5': 'π/2',
+                                        '3': 'π'
+                                    };
+                                    return piValues[value] || value;
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'y轴'
+                            },
+                            min: -1.5,
+                            max: 1.5
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // 电影排行榜图表
+            charts.movie = new Chart(document.getElementById('movieChart'), {
+                type: 'bar',
+                data: getMovieData(),
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '2019年内地电影票房排行榜'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '总票房(亿元)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            // 填充表格
+            populateMovieTable();
+            
+            // 设置第3章图表控件
+            setupChapter3Controls();
+        }
+
+        // 数据生成函数
+        function getLineData(type) {
+            const baseData = {
+                labels: ['第1天', '第2天', '第3天', '第4天', '第5天', '第6天', '第7天', 
+                        '第8天', '第9天', '第10天', '第11天', '第12天', '第13天', '第14天', '第15天'],
+                datasets: []
+            };
+
+            switch(type) {
+                case 'temperature':
+                    baseData.datasets = [
+                        {
+                            label: '最高气温',
+                            data: [32, 33, 34, 34, 33, 31, 30, 29, 30, 29, 26, 23, 21, 25, 31],
+                            borderColor: '#ff6b6b',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: '最低气温',
+                            data: [19, 19, 20, 22, 22, 21, 22, 16, 18, 18, 17, 14, 15, 16, 16],
+                            borderColor: '#4ecdc4',
+                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                            tension: 0.4
+                        }
+                    ];
+                    break;
+                case 'sales':
+                    baseData.datasets = [{
+                        label: '销售额',
+                        data: [120, 135, 145, 130, 160, 155, 170, 165, 180, 175, 190, 185, 200, 195, 210],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }];
+                    break;
+                default:
+                    baseData.datasets = [{
+                        label: '随机数据',
+                        data: Array(15).fill().map(() => Math.random() * 200 + 50),
+                        borderColor: '#f093fb',
+                        backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                        tension: 0.4
+                    }];
+            }
+            return baseData;
+        }
+
+        function getBarData(type) {
+            const labels = ['商品A', '商品B', '商品C', '商品D', '商品E'];
+            
+            switch(type) {
+                case 'sales':
+                    return {
+                        labels: labels,
+                        datasets: [{
+                            label: '销售量',
+                            data: [120, 150, 180, 90, 200],
+                            backgroundColor: [
+                                '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'
+                            ]
+                        }]
+                    };
+                case 'revenue':
+                    return {
+                        labels: labels,
+                        datasets: [{
+                            label: '收入',
+                            data: [4500, 5200, 3800, 2900, 6100],
+                            backgroundColor: [
+                                '#ff9ff3', '#f368e0', '#00d2d3', '#54a0ff', '#5f27cd'
+                            ]
+                        }]
+                    };
+                default:
+                    return {
+                        labels: labels,
+                        datasets: [{
+                            label: '用户数',
+                            data: [340, 280, 410, 190, 320],
+                            backgroundColor: [
+                                '#ff9f43', '#ee5253', '#0abde3', '#10ac84', '#5f27cd'
+                            ]
+                        }]
+                    };
+            }
+        }
+
+        function getPieData(type) {
+            switch(type) {
+                case 'budget':
+                    return {
+                        labels: ['技术研发', '市场营销', '人力资源', '运营成本', '其他'],
+                        datasets: [{
+                            data: [35, 25, 15, 20, 5],
+                            backgroundColor: [
+                                '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'
+                            ]
+                        }]
+                    };
+                case 'market':
+                    return {
+                        labels: ['产品A', '产品B', '产品C', '其他'],
+                        datasets: [{
+                            data: [40, 30, 20, 10],
+                            backgroundColor: [
+                                '#ff9ff3', '#f368e0', '#00d2d3', '#54a0ff'
+                            ]
+                        }]
+                    };
+                default:
+                    return {
+                        labels: ['工作', '学习', '娱乐', '休息', '其他'],
+                        datasets: [{
+                            data: [40, 25, 15, 15, 5],
+                            backgroundColor: [
+                                '#ff9f43', '#ee5253', '#0abde3', '#10ac84', '#5f27cd'
+                            ]
+                        }]
+                    };
+            }
+        }
+
+        function getScatterData(type) {
+            let data = [];
+            const count = 50;
+            
+            switch(type) {
+                case 'correlation':
+                    for (let i = 0; i < count; i++) {
+                        const x = Math.random() * 100;
+                        const y = x * 0.8 + Math.random() * 20;
+                        data.push({x: x, y: y});
+                    }
+                    break;
+                case 'negative':
+                    for (let i = 0; i < count; i++) {
+                        const x = Math.random() * 100;
+                        const y = 100 - x * 0.8 + Math.random() * 20;
+                        data.push({x: x, y: y});
+                    }
+                    break;
+                default:
+                    for (let i = 0; i < count; i++) {
+                        data.push({
+                            x: Math.random() * 100,
+                            y: Math.random() * 100
+                        });
+                    }
+            }
+
+            return {
+                datasets: [{
+                    label: '数据点',
+                    data: data,
+                    backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    pointRadius: 6
+                }]
+            };
+        }
+
+        function getHistogramData(type) {
+            let data = [];
+            const bins = 8;
+            
+            switch(type) {
+                case 'normal':
+                    for (let i = 0; i < 1000; i++) {
+                        data.push(gaussianRandom(50, 15));
+                    }
+                    break;
+                case 'uniform':
+                    for (let i = 0; i < 1000; i++) {
+                        data.push(Math.random() * 100);
+                    }
+                    break;
+                default:
+                    for (let i = 0; i < 1000; i++) {
+                        data.push(Math.pow(Math.random(), 2) * 100);
+                    }
+            }
+
+            // 计算直方图数据
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const binSize = (max - min) / bins;
+            const histogram = Array(bins).fill(0);
+            
+            data.forEach(value => {
+                const binIndex = Math.min(Math.floor((value - min) / binSize), bins - 1);
+                histogram[binIndex]++;
+            });
+
+            return {
+                labels: Array(bins).fill().map((_, i) => {
+                    const start = min + i * binSize;
+                    const end = min + (i + 1) * binSize;
+                    return `${start.toFixed(1)}-${end.toFixed(1)}`;
+                }),
+                datasets: [{
+                    label: '频数',
+                    data: histogram,
+                    backgroundColor: '#4ecdc4'
+                }]
+            };
+        }
+
+        // 第3章数据生成函数
+        function generateSineCosineData(frequency, amplitude) {
+            const x = [];
+            const sin = [];
+            const cos = [];
+            
+            for (let i = -Math.PI; i <= Math.PI; i += 0.1) {
+                x.push(i);
+                sin.push(amplitude * Math.sin(frequency * i));
+                cos.push(amplitude * Math.cos(frequency * i));
+            }
+            
+            return {
+                labels: x,
+                datasets: [
+                    {
+                        label: 'sin(x)',
+                        data: sin,
+                        borderColor: '#2575fc',
+                        backgroundColor: 'rgba(37, 117, 252, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'cos(x)',
+                        data: cos,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            };
+        }
+
+        let movieData = [
+            { name: "哪吒之魔童降世", boxOffice: 48.57 },
+            { name: "流浪地球", boxOffice: 46.18 },
+            { name: "复仇者联盟4:终局之战", boxOffice: 42.05 },
+            { name: "疯狂的外星人", boxOffice: 21.83 },
+            { name: "飞驰人生", boxOffice: 17.03 },
+            { name: "烈火英雄", boxOffice: 16.70 },
+            { name: "蜘蛛侠:英雄远征", boxOffice: 14.01 },
+            { name: "速度与激情:特别行动", boxOffice: 13.84 },
+            { name: "扫毒2天地对决", boxOffice: 12.85 },
+            { name: "大黄蜂", boxOffice: 11.38 },
+            { name: "惊奇队长", boxOffice: 10.25 },
+            { name: "比悲伤更悲伤的故事", boxOffice: 9.46 },
+            { name: "哥斯拉2:怪兽之王", boxOffice: 9.27 },
+            { name: "阿丽塔:战斗天使", boxOffice: 8.88 },
+            { name: "银河补习班", boxOffice: 8.64 }
+        ];
+        
+        function getMovieData() {
+            // 排序数据
+            const sortedData = [...movieData].sort((a, b) => b.boxOffice - a.boxOffice);
+            const labels = sortedData.map(movie => movie.name);
+            const data = sortedData.map(movie => movie.boxOffice);
+            
+            return {
+                labels: labels,
+                datasets: [{
+                    label: '票房(亿元)',
+                    data: data,
+                    backgroundColor: 'rgba(37, 117, 252, 0.7)',
+                    borderColor: 'rgba(37, 117, 252, 1)',
+                    borderWidth: 1
+                }]
+            };
+        }
+        
+        function populateMovieTable() {
+            const tableBody = document.getElementById('movie-data');
+            tableBody.innerHTML = '';
+            
+            movieData.forEach((movie, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${movie.name}</td>
+                    <td>
+                        <input type="number" value="${movie.boxOffice}" step="0.01" min="0" 
+                               data-index="${index}" class="box-office-input">
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // 添加输入事件监听器
+            document.querySelectorAll('.box-office-input').forEach(input => {
+                input.addEventListener('input', updateMovieData);
+            });
+        }
+        
+        function updateMovieData() {
+            const inputs = document.querySelectorAll('.box-office-input');
+            inputs.forEach(input => {
+                const index = parseInt(input.dataset.index);
+                movieData[index].boxOffice = parseFloat(input.value) || 0;
+            });
+            
+            updateMovieChart();
+        }
+        
+        function updateMovieChart() {
+            charts.movie.data = getMovieData();
+            charts.movie.update();
+        }
+
+        // 工具函数
+        function gaussianRandom(mean, std) {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return mean + std * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        // 图表更新函数
+        function updateLineChart(type) {
+            charts.line.data = getLineData(type);
+            charts.line.update();
+        }
+
+        function updateBarChart(type) {
+            charts.bar.data = getBarData(type);
+            charts.bar.update();
+        }
+
+        function updatePieChart(type) {
+            charts.pie.data = getPieData(type);
+            charts.pie.update();
+        }
+
+        function updateScatterChart(type) {
+            charts.scatter.data = getScatterData(type);
+            charts.scatter.update();
+        }
+
+        function updateHistogramChart(type) {
+            charts.histogram.data = getHistogramData(type);
+            charts.histogram.update();
+        }
+
+        // 第3章图表控件设置
+        function setupChapter3Controls() {
+            // 正弦余弦图表控件
+            const frequencySlider = document.getElementById('frequency');
+            const amplitudeSlider = document.getElementById('amplitude');
+            const frequencyValue = document.getElementById('frequency-value');
+            const amplitudeValue = document.getElementById('amplitude-value');
+            const animateSineBtn = document.getElementById('animate-sine');
+            const resetSineBtn = document.getElementById('reset-sine');
+            
+            // 更新显示值
+            frequencySlider.addEventListener('input', function() {
+                frequencyValue.textContent = this.value;
+            });
+            
+            amplitudeSlider.addEventListener('input', function() {
+                amplitudeValue.textContent = this.value;
+            });
+            
+            // 更新图表数据
+            function updateSineCosineChart() {
+                const frequency = parseFloat(frequencySlider.value);
+                const amplitude = parseFloat(amplitudeSlider.value);
+                
+                const data = generateSineCosineData(frequency, amplitude);
+                
+                charts.sineCosine.data = data;
+                charts.sineCosine.update();
+            }
+            
+            frequencySlider.addEventListener('input', updateSineCosineChart);
+            amplitudeSlider.addEventListener('input', updateSineCosineChart);
+            
+            // 动画按钮
+            animateSineBtn.addEventListener('click', function() {
+                const frequency = parseFloat(frequencySlider.value);
+                const amplitude = parseFloat(amplitudeSlider.value);
+                
+                // 使用anime.js创建动画效果
+                anime({
+                    targets: [frequencySlider, amplitudeSlider],
+                    value: [frequency * 1.5, amplitude * 1.5],
+                    duration: 2000,
+                    easing: 'easeInOutQuad',
+                    round: 1,
+                    update: function() {
+                        updateSineCosineChart();
+                    }
+                });
+            });
+            
+            // 重置按钮
+            resetSineBtn.addEventListener('click', function() {
+                frequencySlider.value = 1;
+                amplitudeSlider.value = 1;
+                frequencyValue.textContent = '1';
+                amplitudeValue.textContent = '1';
+                
+                updateSineCosineChart();
+            });
+            
+            // 带刻度的图表控件
+            const xMinSlider = document.getElementById('x-min');
+            const xMaxSlider = document.getElementById('x-max');
+            const xMinValue = document.getElementById('x-min-value');
+            const xMaxValue = document.getElementById('x-max-value');
+            const animateLabelsBtn = document.getElementById('animate-labels');
+            const resetLabelsBtn = document.getElementById('reset-labels');
+            
+            // 更新显示值
+            xMinSlider.addEventListener('input', function() {
+                xMinValue.textContent = this.value;
+            });
+            
+            xMaxSlider.addEventListener('input', function() {
+                xMaxValue.textContent = this.value;
+            });
+            
+            // 更新图表数据
+            function updateLabeledChart() {
+                const xMin = parseFloat(xMinSlider.value);
+                const xMax = parseFloat(xMaxSlider.value);
+                
+                // 生成新的数据范围
+                const x = [];
+                const sin = [];
+                const cos = [];
+                
+                for (let i = xMin; i <= xMax; i += 0.1) {
+                    x.push(i);
+                    sin.push(Math.sin(i));
+                    cos.push(Math.cos(i));
+                }
+                
+                charts.labeled.data.labels = x;
+                charts.labeled.data.datasets[0].data = sin;
+                charts.labeled.data.datasets[1].data = cos;
+                
+                charts.labeled.options.scales.x.min = xMin;
+                charts.labeled.options.scales.x.max = xMax;
+                
+                charts.labeled.update();
+            }
+            
+            xMinSlider.addEventListener('input', updateLabeledChart);
+            xMaxSlider.addEventListener('input', updateLabeledChart);
+            
+            // 动画按钮
+            animateLabelsBtn.addEventListener('click', function() {
+                const xMin = parseFloat(xMinSlider.value);
+                const xMax = parseFloat(xMaxSlider.value);
+                
+                // 使用anime.js创建动画效果
+                anime({
+                    targets: [xMinSlider, xMaxSlider],
+                    value: [xMin * 0.7, xMax * 1.3],
+                    duration: 2000,
+                    easing: 'easeInOutQuad',
+                    round: 1,
+                    update: function() {
+                        updateLabeledChart();
+                    }
+                });
+            });
+            
+            // 重置按钮
+            resetLabelsBtn.addEventListener('click', function() {
+                xMinSlider.value = -3;
+                xMaxSlider.value = 3;
+                xMinValue.textContent = '-3';
+                xMaxValue.textContent = '3';
+                
+                updateLabeledChart();
+            });
+            
+            // 电影排行榜控件
+            const animateMoviesBtn = document.getElementById('animate-movies');
+            const resetMoviesBtn = document.getElementById('reset-movies');
+            
+            // 动画按钮
+            animateMoviesBtn.addEventListener('click', function() {
+                // 随机调整数据
+                const inputs = document.querySelectorAll('.box-office-input');
+                
+                anime({
+                    targets: inputs,
+                    value: function(el) {
+                        const currentValue = parseFloat(el.value);
+                        return Math.max(0, currentValue * (0.8 + Math.random() * 0.4));
+                    },
+                    duration: 2000,
+                    easing: 'easeInOutQuad',
+                    round: 2,
+                    update: function() {
+                        updateMovieData();
+                    }
+                });
+            });
+            
+            // 重置按钮
+            resetMoviesBtn.addEventListener('click', function() {
+                // 恢复原始数据
+                movieData = [
+                    { name: "哪吒之魔童降世", boxOffice: 48.57 },
+                    { name: "流浪地球", boxOffice: 46.18 },
+                    { name: "复仇者联盟4:终局之战", boxOffice: 42.05 },
+                    { name: "疯狂的外星人", boxOffice: 21.83 },
+                    { name: "飞驰人生", boxOffice: 17.03 },
+                    { name: "烈火英雄", boxOffice: 16.70 },
+                    { name: "蜘蛛侠:英雄远征", boxOffice: 14.01 },
+                    { name: "速度与激情:特别行动", boxOffice: 13.84 },
+                    { name: "扫毒2天地对决", boxOffice: 12.85 },
+                    { name: "大黄蜂", boxOffice: 11.38 },
+                    { name: "惊奇队长", boxOffice: 10.25 },
+                    { name: "比悲伤更悲伤的故事", boxOffice: 9.46 },
+                    { name: "哥斯拉2:怪兽之王", boxOffice: 9.27 },
+                    { name: "阿丽塔:战斗天使", boxOffice: 8.88 },
+                    { name: "银河补习班", boxOffice: 8.64 }
+                ];
+                
+                populateMovieTable();
+                updateMovieChart();
+            });
+        }
+
+        // 导航功能
+        function showAllCharts() {
+            document.querySelectorAll('.chart-card').forEach(card => {
+                card.style.display = 'block';
+            });
+            updateNavTabs('all');
+        }
+
+        function showChart(type) {
+            document.querySelectorAll('.chart-card').forEach(card => {
+                card.style.display = card.dataset.type === type ? 'block' : 'none';
+            });
+            updateNavTabs(type);
+        }
+
+        function updateNavTabs(activeType) {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            if (activeType === 'all') {
+                document.querySelector('.nav-tab').classList.add('active');
+            } else {
+                document.querySelector(`.nav-tab[onclick="showChart('${activeType}')"]`).classList.add('active');
+            }
+        }
+
+        // 文件上传处理
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                alert(`文件 "${file.name}" 已选择，准备进行可视化分析...`);
+                // 这里可以添加文件解析和图表生成的逻辑
+            }
+        });
+    </script>
+</body>
+</html>
