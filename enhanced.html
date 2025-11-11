@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化交互平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--primary-color);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .controls {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .chart-container {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            height: 600px;
+            position: relative;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        select, input, button, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .button-group button {
+            flex: 1;
+        }
+        
+        .secondary-btn {
+            background-color: var(--accent-color);
+        }
+        
+        .secondary-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .color-preview {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .chart-wrapper {
+            height: 500px;
+            position: relative;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        
+        .data-table th {
+            background-color: #f2f2f2;
+        }
+        
+        .tab-container {
+            margin-top: 2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--secondary-color);
+            color: var(--secondary-color);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+        
+        .data-input-group {
+            margin-bottom: 1rem;
+        }
+        
+        .data-input-row {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+        
+        .data-input-row input {
+            flex: 1;
+            margin-right: 0.5rem;
+        }
+        
+        .data-input-row button {
+            width: auto;
+            padding: 0.5rem;
+            background-color: var(--accent-color);
+        }
+        
+        .dataset-controls {
+            margin-top: 1rem;
+            border-top: 1px solid #ddd;
+            padding-top: 1rem;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            background-color: #2ecc71;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
+        
+        .loading {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>数据可视化交互平台</h1>
+            <p>探索和自定义不同的图表样式，支持自定义数据输入</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard">
+            <div class="controls">
+                <h2>图表设置</h2>
+                
+                <div class="control-group">
+                    <label for="chartType">图表类型</label>
+                    <select id="chartType">
+                        <option value="bar">柱状图</option>
+                        <option value="line">折线图</option>
+                        <option value="scatter">散点图</option>
+                        <option value="pie">饼图</option>
+                        <option value="radar">雷达图</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="colorScheme">颜色方案</label>
+                    <select id="colorScheme">
+                        <option value="default">默认颜色</option>
+                        <option value="vibrant">鲜艳配色</option>
+                        <option value="pastel">柔和配色</option>
+                        <option value="monochrome">单色系</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="lineStyleGroup">
+                    <label for="lineStyle">线型（仅折线图）</label>
+                    <select id="lineStyle">
+                        <option value="solid">实线</option>
+                        <option value="dashed">虚线</option>
+                        <option value="dotted">点线</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="markerStyleGroup">
+                    <label for="markerStyle">数据标记</label>
+                    <select id="markerStyle">
+                        <option value="none">无</option>
+                        <option value="circle">圆形</option>
+                        <option value="square">方形</option>
+                        <option value="triangle">三角形</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="dataSet">数据集</label>
+                    <select id="dataSet">
+                        <option value="bookSales">图书销售数据</option>
+                        <option value="exchangeRate">汇率数据</option>
+                        <option value="custom">自定义数据</option>
+                    </select>
+                </div>
+                
+                <div id="customDataInput" style="display: none;">
+                    <h3>自定义数据</h3>
+                    
+                    <div class="control-group">
+                        <label for="datasetCount">数据集数量</label>
+                        <input type="number" id="datasetCount" min="1" max="5" value="2">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="dataLabels">数据标签（用逗号分隔）</label>
+                        <input type="text" id="dataLabels" placeholder="例如: 一月,二月,三月,四月,五月" value="一月,二月,三月,四月,五月">
+                    </div>
+                    
+                    <div id="datasetInputs">
+                        <!-- 数据集输入将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="generateSampleData">生成示例数据</button>
+                        <button id="clearData" class="secondary-btn">清空数据</button>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="updateChart">更新图表</button>
+                    <button id="resetSettings">重置设置</button>
+                </div>
+                
+                <div class="dataset-controls">
+                    <h3>导出功能</h3>
+                    <div class="button-group">
+                        <button id="exportImage">导出为图片</button>
+                        <button id="exportData" class="secondary-btn">导出数据</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>数据可视化</h2>
+                <div class="chart-wrapper">
+                    <canvas id="myChart"></canvas>
+                    <div class="loading" id="chartLoading">
+                        <div class="spinner"></div>
+                        <p>正在生成图表...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="data">数据表格</div>
+                <div class="tab" data-tab="code">代码示例</div>
+                <div class="tab" data-tab="about">关于</div>
+            </div>
+            
+            <div class="tab-content active" id="data-tab">
+                <h3>当前数据</h3>
+                <table class="data-table" id="dataTable">
+                    <!-- 数据将通过JavaScript填充 -->
+                </table>
+            </div>
+            
+            <div class="tab-content" id="code-tab">
+                <h3>Python代码示例</h3>
+                <div class="code-block" id="codeExample">
+                    <!-- 代码将通过JavaScript填充 -->
+                </div>
+            </div>
+            
+            <div class="tab-content" id="about-tab">
+                <h3>关于此平台</h3>
+                <p>这个数据可视化交互平台基于第四章Jupyter笔记本内容创建，允许用户探索不同的图表样式、颜色方案和线型。</p>
+                <p>平台使用了Chart.js库来实现交互式图表，并模拟了matplotlib中的一些常用功能。</p>
+                <p>主要功能包括：</p>
+                <ul>
+                    <li>多种图表类型选择（柱状图、折线图、散点图、饼图、雷达图）</li>
+                    <li>多种颜色方案</li>
+                    <li>线型自定义</li>
+                    <li>数据标记选项</li>
+                    <li>自定义数据输入</li>
+                    <li>示例数据生成</li>
+                    <li>实时预览和数据表格</li>
+                    <li>对应的Python代码生成</li>
+                    <li>图表和数据导出功能</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // 初始化数据
+        const bookSalesData = {
+            labels: ["家庭", "小说", "心理", "科技", "儿童"],
+            datasets: [
+                {
+                    label: "地区1",
+                    data: [1200, 2400, 1800, 2200, 1600],
+                    backgroundColor: "#FFCC00"
+                },
+                {
+                    label: "地区2",
+                    data: [1050, 2100, 1300, 1600, 1340],
+                    backgroundColor: "#B0C4DE"
+                }
+            ]
+        };
+        
+        const exchangeRateData = {
+            labels: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19, 24, 25, 26, 31],
+            datasets: [
+                {
+                    label: "2017年7月美元/人民币汇率",
+                    data: [6.8007, 6.8007, 6.8015, 6.8015, 6.8060, 6.8060, 6.8060, 6.8036, 
+                           6.8025, 6.7877, 6.7835, 6.7758, 6.7700, 6.7463, 6.7519, 6.7511, 
+                           6.7511, 6.7539, 6.7265],
+                    borderColor: "#006374",
+                    backgroundColor: "rgba(0, 99, 116, 0.1)",
+                    fill: false
+                },
+                {
+                    label: "2019年7月美元/人民币汇率",
+                    data: [6.8640, 6.8705, 6.8697, 6.8697, 6.8697, 6.8881, 6.8853, 6.8856, 
+                           6.8677, 6.8662, 6.8662, 6.8662, 6.8827, 6.8761, 6.8635, 6.8860, 
+                           6.8737, 6.8796, 6.8841],
+                    borderColor: "#8a2e76",
+                    backgroundColor: "rgba(138, 46, 118, 0.1)",
+                    fill: false
+                }
+            ]
+        };
+        
+        // 默认图表配置
+        let chartConfig = {
+            type: 'bar',
+            data: bookSalesData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '采购数量(本)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '图书种类'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '地区1和地区2对各类图书的采购情况',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    },
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: 'xy'
+                        },
+                        zoom: {
+                            wheel: {
+                                enabled: true,
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy',
+                        }
+                    }
+                }
+            }
+        };
+        
+        // 初始化图表
+        let myChart = new Chart(
+            document.getElementById('myChart'),
+            chartConfig
+        );
+        
+        // 生成数据集输入控件
+        function generateDatasetInputs() {
+            const datasetCount = parseInt(document.getElementById('datasetCount').value);
+            const datasetInputs = document.getElementById('datasetInputs');
+            datasetInputs.innerHTML = '';
+            
+            for (let i = 0; i < datasetCount; i++) {
+                const datasetDiv = document.createElement('div');
+                datasetDiv.className = 'data-input-group';
+                
+                const datasetLabel = document.createElement('label');
+                datasetLabel.textContent = `数据集 ${i+1} 名称`;
+                datasetDiv.appendChild(datasetLabel);
+                
+                const datasetNameInput = document.createElement('input');
+                datasetNameInput.type = 'text';
+                datasetNameInput.placeholder = `数据集 ${i+1}`;
+                datasetNameInput.value = `数据集 ${i+1}`;
+                datasetNameInput.id = `datasetName${i}`;
+                datasetDiv.appendChild(datasetNameInput);
+                
+                const dataLabel = document.createElement('label');
+                dataLabel.textContent = `数据集 ${i+1} 数值（用逗号分隔）`;
+                datasetDiv.appendChild(dataLabel);
+                
+                const dataInput = document.createElement('input');
+                dataInput.type = 'text';
+                dataInput.placeholder = '例如: 10,20,30,40,50';
+                dataInput.id = `datasetData${i}`;
+                
+                // 设置默认示例数据
+                if (i === 0) {
+                    dataInput.value = '12,19,3,5,2';
+                } else if (i === 1) {
+                    dataInput.value = '5,10,6,8,15';
+                }
+                
+                datasetDiv.appendChild(dataInput);
+                
+                datasetInputs.appendChild(datasetDiv);
+            }
+        }
+        
+        // 获取自定义数据
+        function getCustomData() {
+            const labels = document.getElementById('dataLabels').value.split(',').map(label => label.trim());
+            const datasetCount = parseInt(document.getElementById('datasetCount').value);
+            
+            const datasets = [];
+            for (let i = 0; i < datasetCount; i++) {
+                const name = document.getElementById(`datasetName${i}`).value || `数据集 ${i+1}`;
+                const dataString = document.getElementById(`datasetData${i}`).value;
+                const data = dataString.split(',').map(value => parseFloat(value.trim()));
+                
+                datasets.push({
+                    label: name,
+                    data: data
+                });
+            }
+            
+            return {
+                labels: labels,
+                datasets: datasets
+            };
+        }
+        
+        // 更新图表函数
+        function updateChart() {
+            showLoading();
+            
+            // 使用setTimeout确保UI更新
+            setTimeout(() => {
+                const chartType = document.getElementById('chartType').value;
+                const colorScheme = document.getElementById('colorScheme').value;
+                const lineStyle = document.getElementById('lineStyle').value;
+                const markerStyle = document.getElementById('markerStyle').value;
+                const dataSet = document.getElementById('dataSet').value;
+                
+                // 选择数据集
+                let selectedData;
+                if (dataSet === 'bookSales') {
+                    selectedData = JSON.parse(JSON.stringify(bookSalesData));
+                    chartConfig.options.scales.y.title.text = '采购数量(本)';
+                    chartConfig.options.scales.x.title.text = '图书种类';
+                    chartConfig.options.plugins.title.text = '地区1和地区2对各类图书的采购情况';
+                } else if (dataSet === 'exchangeRate') {
+                    selectedData = JSON.parse(JSON.stringify(exchangeRateData));
+                    chartConfig.options.scales.y.title.text = '汇率';
+                    chartConfig.options.scales.x.title.text = '日期';
+                    chartConfig.options.plugins.title.text = '2017年7月与2019年7月美元/人民币汇率走势';
+                } else {
+                    // 自定义数据
+                    selectedData = getCustomData();
+                    chartConfig.options.scales.y.title.text = '数值';
+                    chartConfig.options.scales.x.title.text = '类别';
+                    chartConfig.options.plugins.title.text = '自定义数据可视化';
+                }
+                
+                // 应用颜色方案
+                applyColorScheme(selectedData, colorScheme);
+                
+                // 设置图表类型
+                chartConfig.type = chartType;
+                
+                // 应用线型（仅适用于折线图）
+                if (chartType === 'line') {
+                    applyLineStyle(selectedData, lineStyle);
+                }
+                
+                // 应用数据标记
+                applyMarkerStyle(selectedData, markerStyle);
+                
+                // 更新图表数据
+                chartConfig.data = selectedData;
+                
+                // 销毁旧图表并创建新图表
+                myChart.destroy();
+                myChart = new Chart(
+                    document.getElementById('myChart'),
+                    chartConfig
+                );
+                
+                // 更新数据表格
+                updateDataTable(selectedData);
+                
+                // 更新代码示例
+                updateCodeExample(chartType, colorScheme, lineStyle, markerStyle, dataSet, selectedData);
+                
+                hideLoading();
+                showNotification('图表已更新！');
+            }, 500);
+        }
+        
+        // 应用颜色方案
+        function applyColorScheme(data, scheme) {
+            const colorSets = {
+                default: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+                vibrant: ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'],
+                pastel: ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6'],
+                monochrome: ['#636363', '#969696', '#bdbdbd', '#d9d9d9', '#f0f0f0']
+            };
+            
+            const colors = colorSets[scheme] || colorSets.default;
+            
+            data.datasets.forEach((dataset, index) => {
+                if (chartConfig.type === 'bar' || chartConfig.type === 'pie' || chartConfig.type === 'radar') {
+                    dataset.backgroundColor = colors[index % colors.length];
+                } else {
+                    dataset.borderColor = colors[index % colors.length];
+                    dataset.backgroundColor = dataset.borderColor + '33'; // 添加透明度
+                }
+            });
+        }
+        
+        // 应用线型
+        function applyLineStyle(data, style) {
+            const borderDashMap = {
+                solid: [],
+                dashed: [10, 5],
+                dotted: [2, 2]
+            };
+            
+            data.datasets.forEach(dataset => {
+                dataset.borderDash = borderDashMap[style] || [];
+            });
+        }
+        
+        // 应用数据标记
+        function applyMarkerStyle(data, style) {
+            const pointStyleMap = {
+                none: false,
+                circle: 'circle',
+                square: 'rect',
+                triangle: 'triangle'
+            };
+            
+            data.datasets.forEach(dataset => {
+                dataset.pointStyle = pointStyleMap[style];
+                dataset.pointRadius = style === 'none' ? 0 : 5;
+            });
+        }
+        
+        // 更新数据表格
+        function updateDataTable(data) {
+            const table = document.getElementById('dataTable');
+            table.innerHTML = '';
+            
+            // 创建表头
+            let headerRow = document.createElement('tr');
+            headerRow.innerHTML = `<th>${chartConfig.type === 'bar' ? '类别' : 'X轴'}</th>`;
+            data.datasets.forEach(dataset => {
+                headerRow.innerHTML += `<th>${dataset.label}</th>`;
+            });
+            table.appendChild(headerRow);
+            
+            // 创建数据行
+            data.labels.forEach((label, index) => {
+                let row = document.createElement('tr');
+                row.innerHTML = `<td>${label}</td>`;
+                data.datasets.forEach(dataset => {
+                    row.innerHTML += `<td>${dataset.data[index]}</td>`;
+                });
+                table.appendChild(row);
+            });
+        }
+        
+        // 更新代码示例
+        function updateCodeExample(chartType, colorScheme, lineStyle, markerStyle, dataSet, data) {
+            const codeElement = document.getElementById('codeExample');
+            
+            let code = '';
+            if (dataSet === 'custom') {
+                // 自定义数据的代码
+                code = `import matplotlib.pyplot as plt\nimport numpy as np\n\n`;
+                code += `plt.rcParams["font.sans-serif"] = ["SimHei"]\n`;
+                code += `plt.rcParams["axes.unicode_minus"] = False\n\n`;
+                
+                code += `# 数据定义\n`;
+                code += `labels = ${JSON.stringify(data.labels)}\n\n`;
+                
+                data.datasets.forEach((dataset, index) => {
+                    code += `data${index+1} = ${JSON.stringify(dataset.data)}\n`;
+                });
+                
+                code += `\n# 创建图表\n`;
+                code += `fig = plt.figure()\n`;
+                code += `ax = fig.add_subplot(111)\n\n`;
+                
+                if (chartType === 'bar') {
+                    code += `# 设置柱状图位置和宽度\n`;
+                    code += `x = np.arange(len(labels))\n`;
+                    code += `bar_width = 0.35\n\n`;
+                    
+                    code += `# 绘制柱状图\n`;
+                    data.datasets.forEach((dataset, index) => {
+                        const color = getColorForScheme(colorScheme, index);
+                        if (index === 0) {
+                            code += `ax.bar(x, data${index+1}, bar_width, color='${color}', label='${dataset.label}')\n`;
+                        } else {
+                            code += `ax.bar(x + bar_width, data${index+1}, bar_width, color='${color}', label='${dataset.label}')\n`;
+                        }
+                    });
+                    
+                    code += `\n# 设置图表属性\n`;
+                    code += `ax.set_xlabel('类别')\n`;
+                    code += `ax.set_ylabel('数值')\n`;
+                    code += `ax.set_title('自定义数据柱状图')\n`;
+                    code += `ax.set_xticks(x + bar_width / 2)\n`;
+                    code += `ax.set_xticklabels(labels)\n`;
+                    code += `ax.legend()\n`;
+                } else if (chartType === 'line') {
+                    code += `# 绘制折线图\n`;
+                    data.datasets.forEach((dataset, index) => {
+                        const color = getColorForScheme(colorScheme, index);
+                        const lineStyleCode = getLineStyleCode(lineStyle);
+                        const markerCode = getMarkerCode(markerStyle);
+                        code += `ax.plot(labels, data${index+1}, color='${color}', ${lineStyleCode}${markerCode}label='${dataset.label}')\n`;
+                    });
+                    
+                    code += `\n# 设置图表属性\n`;
+                    code += `ax.set_xlabel('X轴')\n`;
+                    code += `ax.set_ylabel('数值')\n`;
+                    code += `ax.set_title('自定义数据折线图')\n`;
+                    code += `ax.legend()\n`;
+                }
+                
+                code += `\nplt.show()`;
+            } else {
+                // 预定义数据的代码
+                if (chartType === 'bar') {
+                    code = `
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.rcParams["font.sans-serif"] = ["SimHei"]
+plt.rcParams["axes.unicode_minus"] = False
+
+x = np.arange(5)
+y1 = [1200, 2400, 1800, 2200, 1600]
+y2 = [1050, 2100, 1300, 1600, 1340]
+bar_width = 0.6
+tick_label = ["家庭", "小说", "心理", "科技", "儿童"]
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.bar(x, y1, bar_width, color="#FFCC00", align="center", label="地区1")
+ax.bar(x, y2, bar_width, bottom=y1, color="#B0C4DE", align="center", label="地区2")
+ax.set_ylabel("采购数量(本)")
+ax.set_xlabel("图书种类")
+ax.set_title("地区1和地区2对各类图书的采购情况")
+ax.grid(True, axis='y', color="gray", alpha=0.2)
+ax.set_xticks(x)
+ax.set_xticklabels(tick_label)
+ax.legend()
+plt.show()
+                    `;
+                } else {
+                    code = `
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.rcParams["font.sans-serif"] = ["SimHei"]
+plt.rcParams["axes.unicode_minus"] = False
+
+eurcny_2017 = np.array([6.8007, 6.8007, 6.8015, 6.8015, 6.8060, 6.8060, 6.8060, 6.8036, 
+                        6.8025, 6.7877, 6.7835, 6.7758, 6.7700, 6.7463, 6.7519, 6.7511, 
+                        6.7511, 6.7539, 6.7265])
+eurcny_2019 = np.array([6.8640, 6.8705, 6.8697, 6.8697, 6.8697, 6.8881, 6.8853, 6.8856, 
+                        6.8677, 6.8662, 6.8662, 6.8662, 6.8827, 6.8761, 6.8635, 6.8860, 
+                        6.8737, 6.8796, 6.8841])
+date_x = np.array([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19, 24, 25, 26, 31])
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.plot(date_x, eurcny_2017, color='#006374', linewidth=2, label='2017年7月美元/人民币汇率')
+ax.plot(date_x, eurcny_2019, color='#8a2e76', linestyle='--', linewidth=2, label='2019年7月美元/人民币汇率')
+ax.set_title('2017年7月与2019年7月美元/人民币汇率走势')
+ax.set_xlabel('日期')
+ax.set_ylabel('汇率')
+ax.legend()
+plt.show()
+                    `;
+                }
+            }
+            
+            codeElement.textContent = code;
+        }
+        
+        // 获取颜色方案对应的颜色
+        function getColorForScheme(scheme, index) {
+            const colorSets = {
+                default: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+                vibrant: ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'],
+                pastel: ['#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6'],
+                monochrome: ['#636363', '#969696', '#bdbdbd', '#d9d9d9', '#f0f0f0']
+            };
+            
+            const colors = colorSets[scheme] || colorSets.default;
+            return colors[index % colors.length];
+        }
+        
+        // 获取线型对应的代码
+        function getLineStyleCode(style) {
+            const styleMap = {
+                solid: "linestyle='-', ",
+                dashed: "linestyle='--', ",
+                dotted: "linestyle=':', "
+            };
+            
+            return styleMap[style] || "linestyle='-', ";
+        }
+        
+        // 获取标记对应的代码
+        function getMarkerCode(style) {
+            const markerMap = {
+                none: "",
+                circle: "marker='o', ",
+                square: "marker='s', ",
+                triangle: "marker='^', "
+            };
+            
+            return markerMap[style] || "";
+        }
+        
+        // 重置设置
+        function resetSettings() {
+            document.getElementById('chartType').value = 'bar';
+            document.getElementById('colorScheme').value = 'default';
+            document.getElementById('lineStyle').value = 'solid';
+            document.getElementById('markerStyle').value = 'none';
+            document.getElementById('dataSet').value = 'bookSales';
+            document.getElementById('datasetCount').value = '2';
+            document.getElementById('dataLabels').value = '一月,二月,三月,四月,五月';
+            generateDatasetInputs();
+            updateChart();
+        }
+        
+        // 显示通知
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification';
+            
+            if (isError) {
+                notification.classList.add('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 显示加载状态
+        function showLoading() {
+            document.getElementById('chartLoading').classList.add('show');
+        }
+        
+        // 隐藏加载状态
+        function hideLoading() {
+            document.getElementById('chartLoading').classList.remove('show');
+        }
+        
+        // 生成示例数据
+        function generateSampleData() {
+            const labels = ['一月', '二月', '三月', '四月', '五月', '六月'];
+            const datasetCount = parseInt(document.getElementById('datasetCount').value);
+            
+            document.getElementById('dataLabels').value = labels.join(',');
+            
+            for (let i = 0; i < datasetCount; i++) {
+                const data = [];
+                for (let j = 0; j < labels.length; j++) {
+                    // 生成随机数据
+                    data.push(Math.floor(Math.random() * 100) + 10);
+                }
+                document.getElementById(`datasetData${i}`).value = data.join(',');
+            }
+            
+            showNotification('示例数据已生成！');
+        }
+        
+        // 清空数据
+        function clearData() {
+            document.getElementById('dataLabels').value = '';
+            
+            const datasetCount = parseInt(document.getElementById('datasetCount').value);
+            for (let i = 0; i < datasetCount; i++) {
+                document.getElementById(`datasetData${i}`).value = '';
+            }
+            
+            showNotification('数据已清空！');
+        }
+        
+        // 导出图表为图片
+        function exportImage() {
+            const link = document.createElement('a');
+            link.download = 'chart.png';
+            link.href = document.getElementById('myChart').toDataURL();
+            link.click();
+            showNotification('图表已导出为PNG图片！');
+        }
+        
+        // 导出数据为CSV
+        function exportData() {
+            const data = getCustomData();
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // 添加表头
+            const headers = ['类别'].concat(data.datasets.map(dataset => dataset.label));
+            csvContent += headers.join(',') + '\n';
+            
+            // 添加数据行
+            data.labels.forEach((label, index) => {
+                const row = [label];
+                data.datasets.forEach(dataset => {
+                    row.push(dataset.data[index]);
+                });
+                csvContent += row.join(',') + '\n';
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'data.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification('数据已导出为CSV文件！');
+        }
+        
+        // 标签切换功能
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有活动标签
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                // 添加活动类到当前标签
+                tab.classList.add('active');
+                
+                // 隐藏所有标签内容
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // 显示当前标签内容
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            generateDatasetInputs();
+            updateChart();
+            
+            // 添加事件监听器
+            document.getElementById('updateChart').addEventListener('click', updateChart);
+            document.getElementById('resetSettings').addEventListener('click', resetSettings);
+            document.getElementById('generateSampleData').addEventListener('click', generateSampleData);
+            document.getElementById('clearData').addEventListener('click', clearData);
+            document.getElementById('exportImage').addEventListener('click', exportImage);
+            document.getElementById('exportData').addEventListener('click', exportData);
+            
+            // 当数据集选择改变时，显示/隐藏自定义数据输入
+            document.getElementById('dataSet').addEventListener('change', function() {
+                const customDataInput = document.getElementById('customDataInput');
+                if (this.value === 'custom') {
+                    customDataInput.style.display = 'block';
+                } else {
+                    customDataInput.style.display = 'none';
+                }
+            });
+            
+            // 当数据集数量改变时，重新生成输入控件
+            document.getElementById('datasetCount').addEventListener('change', generateDatasetInputs);
+            
+            // 当图表类型改变时，显示/隐藏相关选项
+            document.getElementById('chartType').addEventListener('change', function() {
+                const lineStyleGroup = document.getElementById('lineStyleGroup');
+                const markerStyleGroup = document.getElementById('markerStyleGroup');
+                
+                if (this.value === 'line') {
+                    lineStyleGroup.style.display = 'block';
+                    markerStyleGroup.style.display = 'block';
+                } else {
+                    lineStyleGroup.style.display = 'none';
+                    if (this.value === 'scatter') {
+                        markerStyleGroup.style.display = 'block';
+                    } else {
+                        markerStyleGroup.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
